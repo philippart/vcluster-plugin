@@ -5,7 +5,7 @@
 cd ..
 
 echo "Generate apis ..."
-deepcopy-gen --input-dirs github.com/philippart/vcluster-plugin/apis/... -o ./ --go-header-file ../../hack/boilerplate.txt  -O zz_generated.deepcopy
+deepcopy-gen --input-dirs github.com/philippart/vcluster-plugin/apis/... -o ./ --go-header-file hack/boilerplate.txt  -O zz_generated.deepcopy
 
 mv github.com/philippart/vcluster-plugin/apis/v1/zz_generated.deepcopy.go apis/v1/zz_generated.deepcopy.go
 rm -R github.com
