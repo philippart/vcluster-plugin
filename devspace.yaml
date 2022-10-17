@@ -11,6 +11,7 @@ images:
     image: ${PLUGIN_IMAGE}
     dockerfile: ./Dockerfile.dev
     rebuildStrategy: ignoreContextChanges
+    createPullSecret: true
 hooks:
   - name: Install Dependencies & Car Manifests
     events: ["after:deploy"]

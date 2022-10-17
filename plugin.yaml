@@ -22,6 +22,11 @@ rbac:
   clusterRole:
     create: true
 
+# image pull secret for GHCR
+serviceAccount:
+  imagePullSecrets:
+  - name: ghcr-secret
+
 # access API server via NodePort
 syncer:
   extraArgs:

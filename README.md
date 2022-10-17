@@ -13,18 +13,26 @@ To use the plugin, create a new vcluster with the `plugin.yaml`:
 # Apply cars crd in host cluster
 kubectl apply -f https://raw.githubusercontent.com/philippart/vcluster-plugin/manifests/crds.yaml
 
+# Create a namespace and secret to pull the plugin image from Github Container Registry
+# This secret will be used by the vcluster service account (see plugin.yaml)
+kubectl create namespace vcluster
+kubectl create secret generic ghcr-secret \
+    --from-file=.dockerconfigjson=../.docker/config.json \
+    --type=kubernetes.io/dockerconfigjson \
+    --namespace vcluster
+
 # Create vcluster with plugin
-vcluster create my-vcluster -n my-vcluster -f https://raw.githubusercontent.com/philippart/vcluster-plugin/plugin.yaml
+vcluster create vcluster -n vcluster -f https://raw.githubusercontent.com/philippart/vcluster-plugin/plugin.yaml
 ```
 
 This will create a new vcluster with the plugin installed. Then test the plugin with:
 
 ```
 # Apply audi car to vcluster
-vcluster connect my-vcluster -n my-vcluster -- kubectl apply -f https://raw.githubusercontent.com/philippart/vcluster-plugin/manifests/audi.yaml
+vcluster connect vcluster -n vcluster -- kubectl apply -f https://raw.githubusercontent.com/philippart/vcluster-plugin/manifests/audi.yaml
 
 # Check if car got correctly synced
-kubectl get cars -n my-vcluster
+kubectl get cars -n vcluster
 ```
 
 ## Building the Plugin

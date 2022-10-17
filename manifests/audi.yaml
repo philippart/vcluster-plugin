@@ -1,5 +1,5 @@
 ---
-apiVersion: example.loft.sh/v1
+apiVersion: example.com/v1
 kind: Car
 metadata:
   name: audi-a4
@@ -8,7 +8,7 @@ spec:
   seats: 5
 
 ---
-apiVersion: example.loft.sh/v1
+apiVersion: example.com/v1
 kind: Car
 metadata:
   name: audi-r8
