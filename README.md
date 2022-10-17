@@ -1,7 +1,7 @@
-## Custom Resource Definition Sync Plugin
+## Vcluster Plugin for Custom Resources
 
-This plugin syncs a new custom resource `cars` from the virtual cluster to the host cluster. 
-It expects that this CRD was already installed in the host cluster. 
+This plugin syncs custom resources `cars` from a virtual cluster to the host cluster. 
+It expects the CRD was already installed in the host cluster.
 
 This code is based on [vcluster SDK example](https://github.com/loft-sh/vcluster-sdk/tree/main/examples/crd-sync).
 
@@ -28,7 +28,7 @@ kubectl get cars -n my-vcluster
 ```
 
 ## Building the Plugin
-To just build the plugin image and push it to the registry, run:
+To just build the plugin image and push it to the registry, run (docker or podman):
 ```
 # Build
 docker build . -t my-repo/my-plugin:0.0.1
@@ -59,13 +59,13 @@ vcluster plugin project structure:
 ```
 
 Before starting to develop, make sure you have installed the following tools on your computer:
-- [docker](https://docs.docker.com/) 
+- [docker](https://docs.docker.com/) or [podman](https://podman.io/getting-started/)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/) with a valid kube context configured
 - [helm](https://helm.sh/docs/intro/install/), which is used to deploy vcluster and the plugin
 - [vcluster CLI](https://www.vcluster.com/docs/getting-started/setup) v0.6.0 or higher
-- [DevSpace](https://devspace.sh/cli/docs/quickstart), which is used to spin up a development environment 
+- [DevSpace](https://devspace.sh/cli/docs/quickstart), which is used to spin up a development environment
 
-If you want to develop within a remote Kubernetes cluster (as opposed to docker-desktop or minikube), make sure to exchange `PLUGIN_IMAGE` in the `devspace.yaml` with a valid registry path you can push to.
+If you want to develop within a remote Kubernetes cluster (as opposed to kind, k3s, minikube...), make sure to exchange `PLUGIN_IMAGE` in the `devspace.yaml` with a valid registry path you can push to.
 
 After successfully setting up the tools, start the development environment with:
 ```

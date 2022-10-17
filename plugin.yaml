@@ -2,7 +2,7 @@
 # with the other vcluster values during vcluster create or helm install.
 plugin:
   crd-sync:
-    image: ghcr.io/philippart/vcluster-plugin:v1
+    image: ghcr.io/philippart/vcluster-plugin:v0.1.0
     imagePullPolicy: IfNotPresent
     rbac:
       role:
@@ -21,3 +21,8 @@ plugin:
 rbac:
   clusterRole:
     create: true
+
+# access API server via NodePort
+syncer:
+  extraArgs:
+  - --tls-san=10.0.2.15
