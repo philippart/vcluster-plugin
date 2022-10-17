@@ -1,38 +1,45 @@
-version: v1beta11
+version: v2beta1
+name: plugin-config
+
 vars:
-  - name: PLUGIN_IMAGE
-    value: ghcr.io/philippart/vcluster-plugin
-  - name: K3S_IMAGE
-    value: rancher/k3s:v1.23.1-k3s1
-  - name: SERVICE_CIDR
-    command: vcluster get service-cidr
+  PLUGIN_IMAGE: ghcr.io/philippart/vcluster-plugin:latest
+  SERVICE_CIDR: $(vcluster get service-cidr)
+
 images:
   vcluster:
     image: ${PLUGIN_IMAGE}
     dockerfile: ./Dockerfile.dev
     rebuildStrategy: ignoreContextChanges
     createPullSecret: true
-hooks:
-  - name: Install Dependencies & Car Manifests
-    events: ["after:deploy"]
-    command: |-
-      # Install dependencies
-      if [ ! -d "vendor" ]; then
-        echo "Executing 'go mod vendor'..."
-        go mod vendor
-      fi
-      
-      # Install car crd
-      kubectl apply -f manifests/crds.yaml
+    skipPush: true
+    buildArgs:
+      HTTP_PROXY: ${HTTP_PROXY}
+      NO_PROXY: ${HTTP_PROXY}
+
+pipelines:
+  # extend the default deploy pipeline
+  deploy: |-
+    run_dependencies --all
+    ensure_pull_secrets --all
+    build_images --all
+    create_deployments --all  
+    # Install dependencies
+    if [ ! -d "vendor" ]; then
+      echo "Executing 'go mod vendor'..."
+      go mod vendor
+    fi
+    # Install car crd
+    kubectl apply -f manifests/crds.yaml
+
 deployments:
-  - name: vcluster
+  vcluster:
     helm:
       chart:
         name: vcluster
         repo: https://charts.loft.sh
         version: 0.11.1
       valuesFiles:
-        - plugin.yaml
+      - plugin.yaml
       values:
         plugin:
           crd-sync:
@@ -41,8 +48,6 @@ deployments:
         serviceAccount:
           create: false
           name: default
-        vcluster:
-          image: ${K3S_IMAGE}
         rbac:
           clusterRole:
             create: true
@@ -53,14 +58,21 @@ deployments:
             enabled: false
           livenessProbe:
             enabled: false
+
 dev:
-  terminal:
+  plugin:
     imageSelector: ${PLUGIN_IMAGE}
-    command: ["./devspace_start.sh"]
-  ports:
-    - imageSelector: ${PLUGIN_IMAGE}
-      forward:
-        - port: 2346
-          remotePort: 2345
-  sync:
-    - imageSelector: ${PLUGIN_IMAGE}
+    terminal:
+      command: "./devspace_start.sh"
+    ports:
+    - port: "2346:2345"
+    sync:
+    - path: ./
+
+commands:
+  # arguments: secret name and namespace
+  image-pull-secret: |-
+    kubectl create secret generic $1 \
+    --from-file=.dockerconfigjson=../.docker/config.json \
+    --type=kubernetes.io/dockerconfigjson \
+    --namespace $2
