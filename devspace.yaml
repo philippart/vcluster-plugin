@@ -2,37 +2,61 @@ version: v2beta1
 name: plugin-config
 
 vars:
-  PLUGIN_IMAGE: ghcr.io/philippart/vcluster-plugin:latest
+  PLUGIN_IMAGE: ghcr.io/philippart/vcluster-plugin:v0.1.1-alpha1
   SERVICE_CIDR: $(vcluster get service-cidr)
+  GOPROXY: "https://repo.cci.nokia.net/gocenter,https://repo.cci.nokia.net/proxy-golang-org"
 
 images:
-  vcluster:
+  plugin:
     image: ${PLUGIN_IMAGE}
     dockerfile: ./Dockerfile.dev
     rebuildStrategy: ignoreContextChanges
     createPullSecret: true
-    skipPush: true
+    # skipPush: true
     buildArgs:
       HTTP_PROXY: ${HTTP_PROXY}
-      NO_PROXY: ${HTTP_PROXY}
-
+      NO_PROXY: ${NO_PROXY}
+      GOPROXY: ${GOPROXY}
+    kaniko:
+      env:
+        HTTP_PROXY: ${HTTP_PROXY}
+        HTTPS_PROXY: ${HTTP_PROXY}
+        NO_PROXY: ${NO_PROXY}
+        GOPROXY: ${GOPROXY}
+      pullSecret: devspace-pull-secrets
+      additionalMounts:
+      - mountPath: /kaniko/.docker/
+        secret:
+          name: devspace-pull-secrets
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+      args:
+      - --skip-tls-verify
+      - --skip-tls-verify-pull
+      # - --no-push
+    
+functions:
+  install_go_dependencies: |-
+    if [ ! -d "vendor" ]; then
+      echo "Executing 'go mod vendor'..."
+      go mod vendor
+    fi
+  install_crds: |-
+     kubectl apply -f manifests/crds.yaml
+ 
 pipelines:
-  # extend the default deploy pipeline
   deploy: |-
     run_dependencies --all
     ensure_pull_secrets --all
     build_images --all
     create_deployments --all  
-    # Install dependencies
-    if [ ! -d "vendor" ]; then
-      echo "Executing 'go mod vendor'..."
-      go mod vendor
-    fi
-    # Install car crd
-    kubectl apply -f manifests/crds.yaml
+    # extend the default deploy pipeline
+    install_go_dependencies
+    install_crds
 
 deployments:
-  vcluster:
+  plugin:
     helm:
       chart:
         name: vcluster
@@ -67,12 +91,13 @@ dev:
     ports:
     - port: "2346:2345"
     sync:
-    - path: ./
+    - path: ./:/vcluster
+      uploadExcludePaths: [".git/"]
 
 commands:
-  # arguments: secret name and namespace
-  image-pull-secret: |-
-    kubectl create secret generic $1 \
+  # arguments: namespace
+  pull-secret: |-
+    kubectl create secret generic ghcr-secret \
     --from-file=.dockerconfigjson=../.docker/config.json \
     --type=kubernetes.io/dockerconfigjson \
-    --namespace $2
+    --namespace $1
